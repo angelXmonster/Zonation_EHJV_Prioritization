@@ -12,14 +12,39 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This markdown is created to document step by step the EHJV prioritization. 
 
-1. First I created the function [ClipMaps] [pkg::func()], which clip any raster based on a shapefile containing the study area. 
-This function can clip rastets individually or it can be feed with the whole folder where are stored the rasters to be clipped.
 
-```{r cars}
-summary(cars)
+#Step 1. Create a shapefile of the study area (EHJV) using the a shapefile from (WEBPAGE)
+
+```{r}
+ecosh1<-terra::vect("./BCR_Terrestrial/BCR_Terrestrial_master.shp") #import shape file
+
+
+ecosh3<-subset(ecosh1, ecosh1$COUNTRY %in% "CANADA")
+ecosh3<-subset(ecosh3, ecosh3$PROVINCE_S%in% c("ONTARIO","QUEBEC","NEWFOUNDLAND", "NOVA SCOTIA", "PRINCE EDWARD ISLAND", "NEW BRUNSWICK"))
+ecosh3<-subset(ecosh3, ecosh3$BCR%in% c(8,12,14))
+
+plot (ecosh3)
 ```
 
-## Including Plots
+
+#Step2.Clip the national models into the the desire study area 
+
+I created the function [ClipMaps] (https://github.com/angelXmonster/Zonation_EHJV_Prioritization/blob/main/Step1/ClipMaps.R), which clip any raster based on a shapefile containing the study area. 
+
+This function can clip rasters individually or it can be feed with the whole folder where are stored the rasters to be clipped.
+(Read the description of the function for more information)
+
+```{r}
+#Runs each map
+clipMaps ("C:/Angela/BAM_project/Zonation/EHJV/Inputs/6Species/birdRasterFiles/pred-BANS-CAN-Mean.tif", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/EHJVshp/EHJVsh.shp", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/6Species") 
+
+clipMaps("C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/National_Models_26_08_2022", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/EHJVshp_plusManitoba/EHJVsh.shp", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/birdRasterFilesEHJV") 
+```
+
+#Step 3. Create the conservation weights
+
+For 
+
 
 You can also embed plots, for example:
 
