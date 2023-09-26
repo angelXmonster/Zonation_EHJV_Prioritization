@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 This markdown is created to document step by step the EHJV prioritization. 
 
 
-#Step 1. Create a shapefile of the study area (EHJV) using the a shapefile from (WEBPAGE)
+#Step 0. Create a shapefile of the study area (EHJV) using the a shapefile from: https://geoscan.nrcan.gc.ca/starweb/geoscan/servlet.starweb?path=geoscan/downloade.web&search1=R=300911
 
 ```{r}
 ecosh1<-terra::vect("./BCR_Terrestrial/BCR_Terrestrial_master.shp") #import shape file
@@ -26,8 +26,16 @@ ecosh3<-subset(ecosh3, ecosh3$BCR%in% c(8,12,14))
 plot (ecosh3)
 ```
 
+```{r}
 
-#Step2.Clip the national models into the the desire study area 
+#save shapefile 
+
+#writeVector(ecosh3, "C:/Angela/BAM_project/Zonation/EHJV/Inputs/EHJVsh.shp", overwrite=TRUE)
+
+```
+
+
+#Step 1.Clip the national models into the the desire study area 
 
 I created the function [ClipMaps] (https://github.com/angelXmonster/Zonation_EHJV_Prioritization/blob/main/Step1/ClipMaps.R), which clip any raster based on a shapefile containing the study area. 
 
@@ -41,12 +49,21 @@ clipMaps ("C:/Angela/BAM_project/Zonation/EHJV/Inputs/6Species/birdRasterFiles/p
 clipMaps("C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/National_Models_26_08_2022", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/EHJVshp_plusManitoba/EHJVsh.shp", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/birdRasterFilesEHJV") 
 ```
 
-#Step 3. Create the conservation weights
+#Step 2. Create the conservation weights
 
-For 
+In the Zonation Analyses the species were weighted by their conservation status: 
+	5 = Schedule 1 listed species
+	4 = Large decreases in population (PIF Pt.c* of 5)
+	3 = Moderate decreases in populations (PIF Pt.c of 4)
+	2= Priority species by BCR 
+	1 = all other species
+	
+* PIF Pt.c score = North American population trend scores indicating vulnerability due to the direction and magnitude of recent changes in population size. 
+* Pt.c score of 5 = Significant large decrease (pop'n change < -50%); 
+  Pt.c score of 4 = Moderate to large decrease (pop'n change -15% to -50%)
+  See more details in: https://pif.birdconservancy.org/acad.handbook.pdf
 
-
-You can also embed plots, for example:
+Note: For EHJV project I create another RMD file where I add conservation weights coming from PIF (). 
 
 ```{r pressure, echo=FALSE}
 plot(pressure)

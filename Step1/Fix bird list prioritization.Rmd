@@ -1,0 +1,85 @@
+---
+title: "Fix bird list prioritization"
+output: pdf_document
+date: "2023-09-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Add the avian conservation assessment number for conservation 
+Here I am going to import the data from the PIF, about the Avian Conservation Assessment Database Scores. Download in: https://pif.birdconservancy.org/avian-conservation-assessment-database-scores/. This file is here named as ACAD
+
+To understand how population declines work for PIF: https://pif.birdconservancy.org/acad.handbook.pdf
+Here I am going to use IUCN.Red.List.2018 and population trend "PT.c" for the PIF global. 
+For the PIF regional I will use "PT.r". 
+
+ListPIF.csv is going to contain the common name of the species for which you are going to extract the conservation status information
+
+#Extract the IUCN
+
+```{r}
+ACAD<-read.csv("C:/Users/Angie/Downloads/ACAD.csv", header = T)
+file1<-read.csv("C:/Users/Angie/Downloads/ListPIF.csv", header = T)
+
+for (i in 1: dim(file1)[1]){
+  for (j in 1: dim(ACAD)[1]){
+    if (file1$CommonName[i]== ACAD$Common.Name[j]){
+      file1$IUCN[i]<- ACAD$IUCN.Red.List.2018[j]
+      break
+    }
+  }
+}
+
+write.csv(file1,"C:/Users/Angie/Downloads/ListPIF1.csv")
+```
+
+#Extract the PT.c
+```{r}
+ACAD<-read.csv("C:/Users/Angie/Downloads/ACAD.csv", header = T)
+file1<-read.csv("C:/Users/Angie/Downloads/ListPIF.csv", header = T)
+
+for (i in 1: dim(file1)[1]){
+  for (j in 1: dim(ACAD)[1]){
+    if (file1$CommonName[i]== ACAD$Common.Name[j]){
+      file1$PT.c[i]<- ACAD$PT.c[j]
+      break
+    }
+  }
+}
+
+write.csv(file1,"C:/Users/Angie/Downloads/ListPIF2.csv")
+```
+
+Here file 2 is going to contain the PIF regional. To avoid confusion I did not name it ACAD
+```{r, echo=FALSE}
+file1<-read.csv("C:/Users/Angie/Downloads/ListPIF.csv", header = T)
+file2<-read.csv("C:/Users/Angie/Downloads/ListPIFR.csv", header = T)
+
+
+for (j in 1: dim(ACAD)[1]){
+    x<-which(file2$Common.Name==file1$CommonName[j])
+      if (length(x)>0){
+        for (i in 1:length(x)){
+          if (file2$Region[x[i]]=="BCR08"){
+            file1$BCR08[j]<-file2$PT.r[x[i]]
+          }
+          if (file2$Region[x[i]]=="BCR12"){
+            file1$BCR12[j]<-file2$PT.r[x[i]]
+          }
+          if (file2$Region[x[i]]=="BCR14"){
+            file1$BCR14[j]<-file2$PT.r[x[i]]
+          }
+          
+        }
+   }
+     
+}
+
+
+
+write.csv(file1,"C:/Users/Angie/Downloads/ListPIF3.csv")
+```
+
+
