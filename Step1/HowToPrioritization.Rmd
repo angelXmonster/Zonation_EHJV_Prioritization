@@ -59,14 +59,94 @@ In the Zonation Analyses the species were weighted by their conservation status:
 	1 = all other species
 	
 * PIF Pt.c score = North American population trend scores indicating vulnerability due to the direction and magnitude of recent changes in population size. 
-* Pt.c score of 5 = Significant large decrease (pop'n change < -50%); 
-  Pt.c score of 4 = Moderate to large decrease (pop'n change -15% to -50%)
+* Pt.c score of 5 = Significant large decrease (< -50%); 
+  Pt.c score of 4 = Moderate to large decrease ( -15% to -50%)
   See more details in: https://pif.birdconservancy.org/acad.handbook.pdf
 
-Note: For EHJV project I create another RMD file where I add conservation weights coming from PIF (). 
+Note: For EHJV project I create another RMD file where I extracted the conservation weights coming from PIF. [FixBirdListPrioritization] (https://github.com/angelXmonster/Zonation_EHJV_Prioritization/blob/main/Step1/FixBirdListPrioritization.Rmd).
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#Step 3. Add AUC weight 
+
+Before adding the AUC weight please note that all national models with AUC lower than 0.7 are discarded. 
+Also any national model that does not have AUC. 
+Note: To check the national models AUC please go to [BAM/Methods] (https://borealbirds.github.io/methods/) and download the result.xlsx
+
+First we rescale the conservation weight as well as the AUC weight. So, both go from 0 to 1.
+
+To rescale the AUC scores: AUC' = (AUC - 0.5) * 2. 
+
+To rescale the Conservation scores: CS' = CS/5
+
+Then average: (a*AUC' + b*CS')/(a+b). Where a and b are the "weights" one whats to gives to the AUC and CS.
+In this case both are equally weight so it is going to be 1. 
+
+```{r}
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+#Step 4. Write the zonation features file
+
+In zonation, each species raster is called feature.
+To run zonation one need to create a text file with the directory of each feature and the weight. 
+
+I will create a list containing the names of the raster files, all of which are going to be in a single folder.
+Such rasters need to be in the form: pred-(ID)-CAN-MeanClipped.tif
+I will need a csv with the birds ID and their respective weights 
+
+In this case I am only using landbirds
+
+##make a list from the folder 
+
+Here I are creating a list of the rasters to be used in zonation
+
+```{r}
+r<-"C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/birdRasterFilesEHJV/Land"
+listb<-list.files(r)
+```
+
+create a list with only the names. This is going to be used to match the birds IDson the csv file 
+```{r}
+nam<-listb
+for (i in 1:length(listb)){
+nam[i]<- gsub('-CAN-MeanClipped.tif','',listb[i])
+nam[i]<- gsub('pred-','',nam[i])
+}
+```
+
+##Create the text file
+
+dtxt is going to be a list with the IDs and Weights of the birds extracted from the csv file
+
+```{r}
+dtxt<-read.csv("C:/Angela/BAM_project/Zonation/EHJV/Inputs/SpeciesList1.csv", header = T)
+
+str(dtxt) #chech the data looks the way you want 
+
+tx<-dtxt %>% select(ConservationWeight, ID)
+
+
+for (j in 1:dim(tx)[1]){
+   x<-which(nam==tx$ID[j])
+   if (length(x)>0){
+   preloc<- paste (r, "/", sep = "")
+    tx$Dir[j]<-paste (preloc, listb[x[1]], sep = "")
+   }
+   else{ tx$Dir[j]<-NA}
+}
+
+tx<-tx %>% select(ConservationWeight, Dir)
+tx<-tx [which (!is.na(tx$Dir)),]
+
+colnames(tx) <- c("weight","filename")
+
+#write.table(tx, "C:/Angela/BAM_project/Zonation/EHJV/Inputs/features_SpeciesList1.txt", quote = T, row.names = FALSE)
+```
+
+#Step 5. Run Prioritization
+
+#Step 6. Plot prioritization 
+
+##Compare with protected areas 
+#Step 7. Include more variables
+## Include footprint
+## Include intacness
