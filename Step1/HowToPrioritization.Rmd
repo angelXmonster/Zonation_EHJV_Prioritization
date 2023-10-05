@@ -49,6 +49,11 @@ clipMaps ("C:/Angela/BAM_project/Zonation/EHJV/Inputs/6Species/birdRasterFiles/p
 clipMaps("C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/National_Models_26_08_2022", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/EHJVshp_plusManitoba/EHJVsh.shp", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/birdRasterFilesEHJV") 
 ```
 
+Note: Given that I used the national models from BAM, I needed to exclude bird species not found in the EHJV: 
+DUFL, HAFL, GCSP, MOBL, SOGR, TOSO, TOWA, VAFH, WETA, WEWP, YHBL. 
+
+I also separated wetland birds: BEKI, DUNL, GRYE, KILL, LEYE, ROSA, SOSA, SPSA, WISN
+
 #Step 2. Create the conservation weights
 
 In the Zonation Analyses the species were weighted by their conservation status: 
@@ -63,25 +68,67 @@ In the Zonation Analyses the species were weighted by their conservation status:
   Pt.c score of 4 = Moderate to large decrease ( -15% to -50%)
   See more details in: https://pif.birdconservancy.org/acad.handbook.pdf
 
-Note: For EHJV project I create another RMD file where I extracted the conservation weights coming from PIF. [FixBirdListPrioritization] (https://github.com/angelXmonster/Zonation_EHJV_Prioritization/blob/main/Step1/FixBirdListPrioritization.Rmd).
+Note: For EHJV project I created another RMD file where I extracted the conservation weights coming from PIF. [FixBirdListPrioritization] (https://github.com/angelXmonster/Zonation_EHJV_Prioritization/blob/main/Step1/FixBirdListPrioritization.Rmd).
 
 #Step 3. Add AUC weight 
 
-Before adding the AUC weight please note that all national models with AUC lower than 0.7 are discarded. 
+Before adding the AUC weight please note that all national models with AUC lower than 0.7 are discarded.
 Also any national model that does not have AUC. 
+
+```{r}
+dtxt<-read.csv("C:/Angela/BAM_project/Zonation/EHJV/Inputs/SpeciesList1.csv", header = T)
+
+str(dtxt) #chech the data looks the way you want 
+
+
+dtxt<- dtxt[which(dtxt$ConservationWeight>=0.7),]
+dtxt<- dtxt[which(!is.na(dtxt$ConservationWeight)),]
+
+```
+
 Note: To check the national models AUC please go to [BAM/Methods] (https://borealbirds.github.io/methods/) and download the result.xlsx
 
 First we rescale the conservation weight as well as the AUC weight. So, both go from 0 to 1.
 
-To rescale the AUC scores: AUC' = (AUC - 0.5) * 2. 
+I rescale the AUC using resclale function which is based on: zi = (xi – min(x)) / (max(x) – min(x))
 
 To rescale the Conservation scores: CS' = CS/5
 
 Then average: (a*AUC' + b*CS')/(a+b). Where a and b are the "weights" one whats to gives to the AUC and CS.
 In this case both are equally weight so it is going to be 1. 
 
+Please note that for this prioritization I am only using forest birds
 ```{r}
+dtxt<-dtxt[which(dtxt$ForestSpp==1),]
+tx<-dplyr::select(dtxt,AUC_final, ConservationWeight, ID)
 
+tx$AUC_final<-scales::rescale(tx$AUC_final)
+tx$ConservationWeight<-tx$ConservationWeight/5
+
+a=1
+b=1
+
+for (j in 1:dim(tx)[1]){
+   x<-which(nam==tx$ID[j])
+   if (length(x)>0){
+   preloc<- paste (r, "/", sep = "")
+    tx$Dir[j]<-paste (preloc, listb[x[1]], sep = "")
+    tx$weight[j]<- ((a*tx$AUC_final[j]) +(b*tx$ConservationWeight[j]))/(a+b)
+    
+   }
+   else{ tx$Dir[j]<-NA}
+}
+
+tx<-dplyr::select(tx,weight, Dir)
+tx<-tx [which (!is.na(tx$Dir)),]
+
+
+colnames(tx) <- c("weight","filename")
+  
+```
+
+```{r}
+write.table(tx, "C:/Angela/BAM_project/Zonation/EHJV/Inputs/features_SpeciesList_AUC_Conservation.txt", quote = T, row.names = FALSE)
 ```
 
 #Step 4. Write the zonation features file
@@ -118,9 +165,6 @@ nam[i]<- gsub('pred-','',nam[i])
 dtxt is going to be a list with the IDs and Weights of the birds extracted from the csv file
 
 ```{r}
-dtxt<-read.csv("C:/Angela/BAM_project/Zonation/EHJV/Inputs/SpeciesList1.csv", header = T)
-
-str(dtxt) #chech the data looks the way you want 
 
 tx<-dtxt %>% select(ConservationWeight, ID)
 
@@ -144,7 +188,12 @@ colnames(tx) <- c("weight","filename")
 
 #Step 5. Run Prioritization
 
+I use Zonation 5 to run the prioritization. 
+To run it follow: https://github.com/angelXmonster/Zonation_EHJV_Prioritization
+
 #Step 6. Plot prioritization 
+
+
 
 ##Compare with protected areas 
 #Step 7. Include more variables
