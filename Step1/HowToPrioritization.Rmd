@@ -42,6 +42,8 @@ I created the function [ClipMaps] (https://github.com/angelXmonster/Zonation_EHJ
 This function can clip rasters individually or it can be feed with the whole folder where are stored the rasters to be clipped.
 (Read the description of the function for more information)
 
+Here I used the BAM National maps 
+
 ```{r}
 #Runs each map
 clipMaps ("C:/Angela/BAM_project/Zonation/EHJV/Inputs/6Species/birdRasterFiles/pred-BANS-CAN-Mean.tif", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/EHJVshp/EHJVsh.shp", "C:/Angela/BAM_project/Zonation/EHJV/Inputs/6Species") 
@@ -151,7 +153,7 @@ r<-"C:/Angela/BAM_project/Zonation/EHJV/Inputs/AllSpecies/birdRasterFilesEHJV/La
 listb<-list.files(r)
 ```
 
-create a list with only the names. This is going to be used to match the birds IDson the csv file 
+create a list with only the names. This is going to be used to match the birds IDs on the csv file 
 ```{r}
 nam<-listb
 for (i in 1:length(listb)){
@@ -185,6 +187,56 @@ colnames(tx) <- c("weight","filename")
 
 #write.table(tx, "C:/Angela/BAM_project/Zonation/EHJV/Inputs/features_SpeciesList1.txt", quote = T, row.names = FALSE)
 ```
+
+##AUC and conservaton weights 
+
+Before adding the AUC weight please note that all national models with AUC lower than 0.7 are discarded. 
+Also any national model that does not have AUC. 
+Note: To check the national models AUC please go to [BAM/Methods] (https://borealbirds.github.io/methods/) and download the result.xlsx
+
+First we rescale the conservation weight as well as the AUC weight. So, both go from 0 to 1.
+
+I rescale the AUC using resclale function which is based on: zi = (xi – min(x)) / (max(x) – min(x))
+
+To rescale the Conservation scores: CS' = CS/5
+
+Then average: (a*AUC' + b*CS')/(a+b). Where a and b are the "weights" one whats to gives to the AUC and CS.
+In this case both are equally weight so it is going to be 1. But the formula will allow us to weight more either weight 
+
+```{r}
+dtxt<-read.csv("../Zonation/EHJV/Inputs/SpeciesList2.csv", header = T)
+
+str(dtxt) #chech the data looks the way you want 
+
+
+dtxt<-dtxt[which(dtxt$ForestSpp==1),]
+tx<-dplyr::select(dtxt,AUC_final, ConservationWeight, ID)
+
+tx$AUC_final<-scales::rescale(tx$AUC_final)
+tx$ConservationWeight<-tx$ConservationWeight/5
+
+a=1
+b=1
+
+for (j in 1:dim(tx)[1]){
+   x<-which(nam==tx$ID[j])
+   if (length(x)>0){
+   preloc<- paste (r, "/", sep = "")
+    tx$Dir[j]<-paste (preloc, listb[x[1]], sep = "")
+    tx$weight[j]<- ((a*tx$AUC_final[j]) +(b*tx$ConservationWeight[j]))/(a+b)
+    
+   }
+   else{ tx$Dir[j]<-NA}
+}
+
+tx<-dplyr::select(tx,weight, Dir)
+tx<-tx [which (!is.na(tx$Dir)),]
+
+
+colnames(tx) <- c("weight","filename")
+  
+```
+
 
 #Step 5. Run Prioritization
 
